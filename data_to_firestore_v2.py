@@ -1,3 +1,4 @@
+# Import and install necessary packages
 import sys
 import subprocess
 
@@ -11,6 +12,7 @@ import firebase_admin
 from firebase_admin import credentials
 from firebase_admin import firestore
 
+# Pull csv files from GCP bucket and create a Firestore instance
 command = 'gsutil cp gs://dlt-sntmnt-source-file-web-scraping/*.csv .'
 os.system(command)
 
@@ -23,11 +25,15 @@ firebase_admin.initialize_app(cred, {
 db = firestore.client()
 x = 0
 
+# Read and add data to Firestore for each csv file
 for file in files:
     
     data = pandas.read_csv(file)
-
+    
+    # Add data to Firestore for each record
     for i in range(data.shape[0]):
+        
+        # Add a new Product Document to the Product Collection (Product information)
         document_name = 'Product_Document'+str(x)+ '.' +str(i)
         db.collection(u'Product_Collection').document(document_name).set({
             u'Product_Name': unicode(data.loc[i,"Product Name"].decode('utf-8')),
@@ -35,10 +41,18 @@ for file in files:
             u'Product_Category':unicode(data.loc[i,"Product Category"].decode('utf-8')) 
         })
 
+        # Add a new Reveiw Document to the Product Document's Review Collection (Review information)
         db.collection(u'Product_Collection').document(document_name).collection(u'Review_Collection').document(u'Reveiw_Document').set({
             u'Review_Headline': unicode(data.loc[i,"Review Headline"].decode('utf-8')),
             u'Review_Rating': data.loc[i,"Review Rating"],
             u'Review_Source': unicode(data.loc[i,"Review Source"].decode('utf-8')),
-            u'Review_Text': unicode(str(data.loc[i, "Review Text"]).decode('utf-8'))
+            u'Review_Text': unicode(str(data.loc[i, "Review Text"]).decode('utf-8')),
+            u'User_Ref': unicode('/User_Collection/User_Document'+str(x)+'.'+str(i))
+        })
+        
+        # Add a new User Document to the User Collection (author information)
+        document_name = 'User_Document'+str(x)+ '.' +str(i)
+        db.collection(u'User_Collection').document(document_name).set({
+            u'User_Name': unicode(data.loc[i,"Review Author"].decode('utf-8')) 
         })
     x = x + 1
