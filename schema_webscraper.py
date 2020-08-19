@@ -36,5 +36,6 @@ class SchemaWebscraperReviewPage(WebscraperReviewPage):
             'headline': review_obj['name'],
             'text': review_obj['reviewBody'],
             'rating': rating, # Out of 100
-            'author': review_obj['author']['name']
+            'author': review_obj['author']['name'],
+            'date': review_obj['datePublished']
         }

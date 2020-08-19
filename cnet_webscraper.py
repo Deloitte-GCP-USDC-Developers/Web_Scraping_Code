@@ -15,7 +15,6 @@ class CnetWebscraper(Webscraper):
         review_links = set()
 
         for cat, page in topics.items():
-            cnet_df = pandas.DataFrame()
             category = requests.get(page)
             category_soup = BeautifulSoup(category.content, 'html.parser')
             results = category_soup.find('div', class_='items')
@@ -32,7 +31,7 @@ class CnetWebscraperReviewPage(SchemaWebscraperReviewPage):
     pass
 
 if __name__ == "__main__":
-    urls = CnetWebscraper.getProductUrls({
+    CnetWebscraper({
         'topics': {
             'Drones':'https://www.cnet.com/topics/drones/products/',
             'Headphones':'https://www.cnet.com/topics/headphones/products/',
@@ -45,4 +44,3 @@ if __name__ == "__main__":
             'TVs': 'https://www.cnet.com/topics/tvs/products/'
         }
     })
-    print(CnetWebscraperReviewPage(urls.pop()).review)
