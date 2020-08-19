@@ -1,8 +1,8 @@
-import sys
-import subprocess
+# import sys
+# import subprocess
 
-subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'bs4'])
-subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'pandas'])
+# subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'bs4'])
+# subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'pandas'])
 
 import requests
 from bs4 import BeautifulSoup
@@ -77,5 +77,5 @@ for cat, page in topics.items():
     cnet_df.to_csv(csv_name, index=False)
 
     path = csv_name
-    command = 'gsutil cp %s gs://dlt-sntmnt-source-file-web-scraping' % path
-    os.system(command)
+    # command = 'gsutil cp %s gs://dlt-sntmnt-source-file-web-scraping' % path
+    # os.system(command)
