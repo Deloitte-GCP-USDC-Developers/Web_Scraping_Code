@@ -7,14 +7,21 @@ from pandas import DataFrame
 
 class Webscraper(ABC):
 
-    @staticmethod
+    @classmethod
     @abstractmethod
-    def getProductUrls(params):
+    def getProductUrls(cls, params):
         pass
+    
+    @classmethod
+    def getProductPageWithErrorChecking(cls, url):
+        try:
+            return cls.getProductPage(url)
+        except SkipPageException:
+            print('Skipped', url)
 
-    @staticmethod
+    @classmethod
     @abstractmethod
-    def getProductPage(url):
+    def getProductPage(cls, url):
         pass
     
     headers = [
@@ -31,19 +38,19 @@ class Webscraper(ABC):
     def getAllProductPages(self, params):
         products = []
         for url in self.getProductUrls(params):
-            page = self.getProductPage(url)
-            products.append({
-                'Product Name': page.product['name'],
-                'Product Category': page.product['category'],
-                'Review Source': page.review['source'],
-                'Review Headline': page.review['headline'],
-                'Review Text': page.review['text'],
-                'Review Author': page.review['author'],
-                'Review Rating': page.review['rating'],
-                'Review Date': page.review['date']
-            })
-        
-        self.reviews = DataFrame(page, columns=self.headers)
+            page = self.getProductPageWithErrorChecking(url)
+            if page:
+                products.append({
+                    'Product Name': page.product['name'],
+                    'Product Category': page.product['category'],
+                    'Review Source': page.review['source'],
+                    'Review Headline': page.review['headline'],
+                    'Review Text': page.review['text'],
+                    'Review Author': page.review['author'],
+                    'Review Rating': page.review['rating'],
+                    'Review Date': page.review['date']
+                })
+        self.reviews = DataFrame(products, columns=self.headers)
     
     def getSaveFileName(self):
         return 'reviews_' + datetime.now().astimezone().isoformat() + '.csv'
@@ -94,3 +101,6 @@ class WebscraperReviewPage(ABC):
     @abstractmethod
     def getReviewInfo(self):
         pass
+
+class SkipPageException(Exception):
+    pass
