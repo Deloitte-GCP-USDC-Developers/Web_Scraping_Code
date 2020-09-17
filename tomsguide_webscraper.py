@@ -11,10 +11,9 @@ from google_review_finder_webscraper import GoogleReviewFinderWebscraper
 from csv_product_loader import CsvProductLoader
 from utils import upload_to_gbucket, get_closest_match
 
-class CnetWebscraper(CsvProductLoader, GoogleReviewFinderWebscraper, Webscraper):
+class EngadgetWebscraper(CsvProductLoader, GoogleReviewFinderWebscraper, Webscraper):
 
-    SEARCH_URL = 'https://www.cnet.com/search/xhr/?query={query}&rpp=30&sort=1#&typeName=content_review'
-
+    SEARCH_URL = 'https://www.tomsguide.com/filter/search?searchTerm={query}&sortBy=relevance&articleType=review'
     PRODUCTNAME_CSVFILE = 'product_list.csv'
     @classmethod
     def getProductUrls(cls, params):
@@ -26,15 +25,14 @@ class CnetWebscraper(CsvProductLoader, GoogleReviewFinderWebscraper, Webscraper)
         n_match = 0
         not_matches = []
         for name, check_url in zip(names, check_urls):
-            result_json = json.loads(requests.get(cls.SEARCH_URL.format(query = name)).content)
-            soup = BeautifulSoup(result_json['result']['html'], 'html.parser')
+            result_html = requests.get(cls.SEARCH_URL.format(query = name)).content
+            soup = BeautifulSoup(result_html, 'html.parser')
             results = [ { 
                 'name': product.find('h3').text,
-                'url': 'https://www.cnet.com' + product.findChild('a')['href'] + '#comments',
+                'url': 'https://www.tomsguide.com/' + product.findChild('a')['href'],
                 'distance': jellyfish.jaro_winkler_similarity(name, product.find('h3').text)
-            } for product in soup.find_all('div', class_='itemInfo')]
-            
-
+            } for product in soup.find_all('div', class_='listingResult')]
+            print(name, results)
             max_distance = -1
             sum_distance = 0
             max_product = None
@@ -43,26 +41,21 @@ class CnetWebscraper(CsvProductLoader, GoogleReviewFinderWebscraper, Webscraper)
                     max_distance = product['distance']
                     max_product = product
                 sum_distance = sum_distance + product['distance']
-                
-            urls.append(max_product['url'])
-            if check_url == max_product['url']:
-                n_match = n_match + 1
-                matches.append(max_product['distance'])
-            else:
-                not_matches.append(max_product['distance'])
+            
+            if max_product:
+                urls.append(max_product['url'])
         
         return urls
-
-    PRODUCT_NAME_LABEL = 'model'
+        
     @staticmethod
     def getProductPage(url):
-        return CnetWebscraperReviewPage(url)
+        return EngadgetWebscraperReviewPage(url)
 
-class CnetWebscraperReviewPage(SchemaWebscraperReviewPage):
+class EngadgetWebscraperReviewPage(SchemaWebscraperReviewPage):
     pass
 
 if __name__ == "__main__":
-    scraper = CnetWebscraper({})
+    scraper = EngadgetWebscraper({})
     print(scraper)
 
     upload_to_gbucket(scraper.result_filename, '/tmp/')

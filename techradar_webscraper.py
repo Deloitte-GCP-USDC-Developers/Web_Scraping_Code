@@ -13,7 +13,7 @@ from utils import upload_to_gbucket, get_closest_match
 
 class CnetWebscraper(CsvProductLoader, GoogleReviewFinderWebscraper, Webscraper):
 
-    SEARCH_URL = 'https://www.cnet.com/search/xhr/?query={query}&rpp=30&sort=1#&typeName=content_review'
+    SEARCH_URL = 'https://www.techradar.com/filter/search?searchTerm={query}&sortBy=relevance&articleType=review'
 
     PRODUCTNAME_CSVFILE = 'product_list.csv'
     @classmethod
@@ -26,13 +26,13 @@ class CnetWebscraper(CsvProductLoader, GoogleReviewFinderWebscraper, Webscraper)
         n_match = 0
         not_matches = []
         for name, check_url in zip(names, check_urls):
-            result_json = json.loads(requests.get(cls.SEARCH_URL.format(query = name)).content)
-            soup = BeautifulSoup(result_json['result']['html'], 'html.parser')
+            result_html = requests.get(cls.SEARCH_URL.format(query = name)).content
+            soup = BeautifulSoup(result_html, 'html.parser')
             results = [ { 
                 'name': product.find('h3').text,
-                'url': 'https://www.cnet.com' + product.findChild('a')['href'] + '#comments',
+                'url': product.findChild('a')['href'],
                 'distance': jellyfish.jaro_winkler_similarity(name, product.find('h3').text)
-            } for product in soup.find_all('div', class_='itemInfo')]
+            } for product in soup.find_all('div', class_='listingResult')]
             
 
             max_distance = -1
@@ -52,8 +52,7 @@ class CnetWebscraper(CsvProductLoader, GoogleReviewFinderWebscraper, Webscraper)
                 not_matches.append(max_product['distance'])
         
         return urls
-
-    PRODUCT_NAME_LABEL = 'model'
+        
     @staticmethod
     def getProductPage(url):
         return CnetWebscraperReviewPage(url)

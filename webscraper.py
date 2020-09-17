@@ -16,8 +16,11 @@ class Webscraper(ABC):
     def getProductPageWithErrorChecking(cls, url):
         try:
             return cls.getProductPage(url)
-        except SkipPageException:
-            print('Skipped', url)
+        except SkipPageException as error:
+            print('Skipped due to ', str(error), url)
+        except Exception as error:
+            print('Skipped due to unknown exception', str(error))
+            print('Object skipped', url)
 
     @classmethod
     @abstractmethod
@@ -55,12 +58,14 @@ class Webscraper(ABC):
     def getSaveFileName(self):
         return 'reviews_' + datetime.now().astimezone().isoformat() + '.csv'
 
-    def saveCsv(self):
-        return self.reviews.to_csv(self.getSaveFileName(), index=False)
+    def saveCsv(self, filename):
+        return self.reviews.to_csv('/tmp/' + filename, index=False)
             
     def __init__(self, params):
         self.getAllProductPages(params)
-        self.saveCsv()
+        self.result_filename = self.getSaveFileName()
+        self.saveCsv(self.result_filename)
+
 
 
 class WebscraperReviewPage(ABC):
